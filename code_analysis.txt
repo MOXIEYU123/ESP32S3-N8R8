@@ -1,0 +1,56 @@
+智能配网系统代码分析
+
+1. 系统架构
+- 采用事件驱动架构，由事件处理器模块和智能配网模块组成
+- 事件处理器模块(event_handler)负责事件注册和分发
+- 智能配网模块(smartconfig)实现ESP-TOUCH配网协议
+
+2. 主要模块功能
+
+2.1 事件处理器模块(event_handler.c)
+- 这是一个通用的事件管理框架
+- 主要功能：
+  * 初始化：event_handler_init()
+    - 初始化事件处理器数组
+    - 重置处理器计数器
+  * 注册：event_handler_register()
+    - 注册新的事件处理器
+    - 最多支持5个处理器
+    - 调用ESP-IDF的esp_event_handler_register
+  * 处理：event_handler_handle()
+    - 遍历所有注册的处理器
+    - 调用每个处理器的处理函数
+- 与SmartConfig模块的关系：
+  * 事件处理器模块提供通用的事件管理框架
+  * SmartConfig模块通过event_handler_register()注册自己的事件处理函数
+  * 当事件发生时，事件处理器模块会调用SmartConfig的事件处理函数
+
+2.2 智能配网模块(smartconfig.c)
+- 初始化：smartconfig_init()
+  * 创建事件组
+  * 初始化事件处理器
+  * 注册智能配网事件处理器
+- 事件处理：smartconfig_event_handler()
+  * 处理SC_EVENT_GOT_SSID_PSWD事件
+    - 获取SSID和密码
+    - 配置WiFi连接参数
+    - 启动WiFi连接
+  * 处理SC_EVENT_SEND_ACK_DONE事件
+    - 设置事件组标志位
+- 任务处理：smartconfig_task()
+  * 启动智能配网
+  * 等待连接完成
+  * 停止配网并删除任务
+
+3. 关键数据结构
+- EventGroupHandle_t: 用于任务间同步的事件组
+- wifi_config_t: WiFi配置结构体
+- smartconfig_event_got_ssid_pswd_t: 智能配网事件数据结构
+
+4. 主要流程
+1) 系统初始化
+2) 注册智能配网事件处理器
+3) 启动智能配网任务
+4) 等待配网完成
+5) 连接WiFi
+6) 停止配网
